@@ -10,14 +10,13 @@ export default function UserManagement() {
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
- const [searchValue, setSearchValue] = useState("");
   
   const userSupabaseQuery = () => {
     let query = supabase
       .from('users')
       .select('*', { count: 'exact' })
-    if (searchValue) {
-      query = query.like('fullname', `%${searchValue}%`)
+    if (searchTerm) {
+      query = query.like('fullname', `%${searchTerm}%`)
     }
     query = query.range((page - 1) * itemPerPage, page * itemPerPage - 1)
     return query
@@ -42,20 +41,25 @@ export default function UserManagement() {
   useEffect(() => {
     fetchUsers();
   }, [page]);
+
   const handleSearch = (event: any) => {
     setSearchTerm(event.target.value);
   };
+
   const search = async () => {
-    console.log("Searching for:", searchTerm);
-    let { data: usersearch, error } = await userSupabaseQuery()
+    console.log("Searching for:", searchTerm); 
+    let { data: usersearch, error , count} = await userSupabaseQuery()
     if (error) {
       console.error("Error searching users:", error);
-      return;
+      return false;
     }
     if (!usersearch || usersearch.length === 0) {
       console.warn("⚠️ No users found matching the search term.");
       return;
     }
+    setPage(1)
+    const calculateMaxPage= Math.ceil((count ?? 0) / itemPerPage);
+    setMaxPage(calculateMaxPage);
     setUsers(usersearch);
     console.log("Search results:", usersearch);
   };
