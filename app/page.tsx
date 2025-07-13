@@ -1,26 +1,37 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+"use client"
+
 import { Button } from "@/components/ui/button";
 import { register } from './action'
 
+// import { useFormState } from "react-dom";
+import { useActionState } from "react";
+type RegisterState = {
+  success: boolean;
+  message: string;
+};
 
-export default function Home() {
-  return (
+const initialState: RegisterState = {
+  success: false,
+  message: "",
+};
+// const initialState = { success: false, message: "" }; // ✅ ใช้ string เปล่า แทน null
+export default  function Home() {
+// const [state, formAction] = useFormState(register, initialState);
+const [state, dispatch, isPending] = useActionState(
+    async (_state: RegisterState, formData: FormData): Promise<RegisterState> => {
+      return await register(formData); // ✅ ย้าย logic ไปให้ register ที่ server handle
+    },
+    initialState
+  );
+    return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
         <div className="mt-4 flex flex-col gap-2">
           <h4 className="text-center mb-4">Register</h4>
-        <form action={register} className="mt-4 flex flex-col gap-2">
+        <form action={dispatch} 
+              className="mt-4 flex flex-col gap-2">
           <input
+          type="text"
             className="rounded-md px-4 py-2 bg-inherit border mb-6"
             name="fullname"
             placeholder="name"
@@ -28,6 +39,7 @@ export default function Home() {
           />
 
           <input
+          type="email"
             className="rounded-md px-4 py-2 bg-inherit border mb-6"
             name="email"
             placeholder="you@example.com"
@@ -35,6 +47,7 @@ export default function Home() {
           />
 
           <input
+          type="tel"
             className="rounded-md px-4 py-2 bg-inherit border mb-6"
             name="tel"
             placeholder="Tel"
@@ -46,9 +59,15 @@ export default function Home() {
             name="attachment"
             required
           />
-            <Button className="w-full px-4 py-2 bg-green-700 rounded-md text-white " variant={"default"}>
-               Register
-          </Button></form>
+            <Button 
+            disabled={isPending}
+            type="submit"
+            className="w-full px-4 py-2 bg-green-700 rounded-md text-white " variant={"default"}>            
+               {isPending ? "Submitting..." : "Register"}
+          </Button>
+          { !state.success&&state.message && <div className="text-red-500">Error : {state.message}</div>}
+          { state.success && <div className="text-green-500">Registration successful!</div>} 
+          </form>
         </div>
       
         {/* <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
